@@ -39,27 +39,30 @@ public extension UITableView {
         deletionAnimation: deletionAnimation
       )
     }, completion: { finished in
-      completion?(finished)
+        self.unifiedPerformBatchUpdates({
+            self.outsideUpdate(
+                changesWithIndexPath: changesWithIndexPath,
+                replacementAnimation: replacementAnimation
+            )
+        }, animated: false, completion: { finished in
+            completion?(finished)
+        })
     })
-
-    // reloadRows needs to be called outside the batch
-    outsideUpdate(changesWithIndexPath: changesWithIndexPath, replacementAnimation: replacementAnimation)
   }
   
   // MARK: - Helper
 
   private func unifiedPerformBatchUpdates(
     _ updates: (() -> Void),
+    animated: Bool = true,
     completion: (@escaping (Bool) -> Void)) {
 
-    if #available(iOS 11, tvOS 11, *) {
-      performBatchUpdates(updates, completion: completion)
-    } else {
-      beginUpdates()
-      updates()
-      endUpdates()
-      completion(true)
+    UIView.performWithoutAnimation {
+        beginUpdates()
+        updates()
+        endUpdates()
     }
+    completion(true)
   }
   
   private func insideUpdate(
